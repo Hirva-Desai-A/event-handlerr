@@ -9,16 +9,27 @@ function UserDetails() {
     const [year, setYear] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Custom Notification State
+    const [notification, setNotification] = useState(null); // { text: string, type: 'error' | 'success' }
+
     const navigate = useNavigate();
 
     const save = async () => {
         setLoading(true);
+        setNotification(null); // Clear previous notifications
         try {
             await API.put("/user/details", { name, phone, college, year });
-            alert("Profile updated!");
-            navigate("/profile");
+
+            // Show success message
+            setNotification({ text: "Profile updated!", type: "success" });
+
+            // Delay navigation slightly so the user can read the notification
+            setTimeout(() => {
+                navigate("/profile");
+            }, 1500);
+
         } catch {
-            alert("Failed to update profile.");
+            setNotification({ text: "Failed to update profile.", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -49,6 +60,35 @@ function UserDetails() {
 
                 {/* Form */}
                 <div className="form-screen" style={{ paddingTop: "18px" }}>
+
+                    {/* Custom Notification UI */}
+                    {notification && (
+                        <div style={{
+                            marginBottom: 20,
+                            padding: "10px 14px",
+                            background: notification.type === "success" ? "rgba(44,191,138,0.1)" : "rgba(244,132,106,0.1)",
+                            border: `1px solid ${notification.type === "success" ? "rgba(44,191,138,0.3)" : "rgba(244,132,106,0.3)"}`,
+                            borderRadius: "10px",
+                            color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                            fontSize: "0.85rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <span>{notification.text}</span>
+                            <button
+                                onClick={() => setNotification(null)}
+                                style={{
+                                    background: "transparent", border: "none",
+                                    color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                                    cursor: "pointer",
+                                    fontSize: "1.2rem", lineHeight: 1, padding: 0
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    )}
 
                     {/* Avatar preview */}
                     <div style={{ textAlign: "center", marginBottom: "20px" }}>

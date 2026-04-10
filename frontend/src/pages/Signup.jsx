@@ -9,11 +9,15 @@ function Signup() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Custom Notification State
+    const [notification, setNotification] = useState(null); // { text: string, type: 'error' | 'success' }
+
     const navigate = useNavigate();
 
     const signup = async () => {
 
         setLoading(true);
+        setNotification(null); // Clear previous notifications
 
         try {
 
@@ -23,13 +27,18 @@ function Signup() {
                 password
             });
 
-            alert("OTP sent to your email");
+            // Show success message
+            setNotification({ text: "OTP sent to your email", type: "success" });
 
-            navigate("/verify-otp", { state: { email } });
+            // Delay navigation slightly so the user can read the notification
+            setTimeout(() => {
+                navigate("/verify-otp", { state: { email } });
+            }, 1500);
 
         } catch (err) {
 
-            alert(err.response?.data?.message || "Signup failed");
+            // Show error message
+            setNotification({ text: err.response?.data?.message || "Signup failed", type: "error" });
 
         } finally {
             setLoading(false);
@@ -39,7 +48,7 @@ function Signup() {
 
     const inputStyle = {
         width: "100%",
-        padding: "11px 14px",
+        padding: "11px 5px",
         background: "#f7f3ef",
         border: "1.2px solid #e8e4f8",
         borderRadius: "10px",
@@ -133,6 +142,35 @@ function Signup() {
                             Join the Student Event Portal
                         </div>
                     </div>
+
+                    {/* Custom Notification UI */}
+                    {notification && (
+                        <div style={{
+                            marginBottom: 16,
+                            padding: "10px 14px",
+                            background: notification.type === "success" ? "rgba(44,191,138,0.1)" : "rgba(244,132,106,0.1)",
+                            border: `1px solid ${notification.type === "success" ? "rgba(44,191,138,0.3)" : "rgba(244,132,106,0.3)"}`,
+                            borderRadius: "10px",
+                            color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                            fontSize: "0.85rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <span>{notification.text}</span>
+                            <button
+                                onClick={() => setNotification(null)}
+                                style={{
+                                    background: "transparent", border: "none",
+                                    color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                                    cursor: "pointer",
+                                    fontSize: "1.2rem", lineHeight: 1, padding: 0
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    )}
 
                     <div style={{ marginBottom: 12 }}>
                         <label style={labelStyle}>Full Name</label>

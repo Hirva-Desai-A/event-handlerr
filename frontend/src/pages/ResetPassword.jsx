@@ -9,33 +9,48 @@ function ResetPassword() {
     const [newPassword, setNewPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
+
+    // Custom Notification State
+    const [notification, setNotification] = useState(null); // { text: string, type: 'error' | 'success' }
+
     const navigate = useNavigate();
 
     const handleSendOTP = async () => {
-        if (!email) return alert("Please enter your email address.");
+        setNotification(null); // Clear previous notifications
+
+        if (!email) return setNotification({ text: "Please enter your email address.", type: "error" });
+
         setLoading(true);
         try {
             await API.post("/auth/forgot-password", { email });
             setStep(2);
-            alert("An OTP has been sent to your email.");
+            setNotification({ text: "An OTP has been sent to your email.", type: "success" });
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to send OTP. Is this email registered?");
+            setNotification({ text: err.response?.data?.message || "Failed to send OTP. Is this email registered?", type: "error" });
         } finally {
             setLoading(false);
         }
     };
 
     const handleResetPassword = async () => {
-        if (!otp || !newPassword) return alert("Please fill out all fields.");
-        if (newPassword.length < 6) return alert("Password must be at least 6 characters.");
+        setNotification(null); // Clear previous notifications
+
+        if (!otp || !newPassword) return setNotification({ text: "Please fill out all fields.", type: "error" });
+        if (newPassword.length < 6) return setNotification({ text: "Password must be at least 6 characters.", type: "error" });
 
         setLoading(true);
         try {
             await API.post("/auth/reset-password", { email, otp, newPassword });
-            alert("Password reset successfully! You can now login.");
-            navigate("/login");
+
+            setNotification({ text: "Password reset successfully! You can now login.", type: "success" });
+
+            // Delay navigation slightly so the user can read the success notification
+            setTimeout(() => {
+                navigate("/login");
+            }, 1500);
+
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to reset password. Invalid OTP.");
+            setNotification({ text: err.response?.data?.message || "Failed to reset password. Invalid OTP.", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -92,13 +107,46 @@ function ResetPassword() {
                         </div>
                     </div>
 
+                    {/* Custom Notification UI */}
+                    {notification && (
+                        <div style={{
+                            marginBottom: 20,
+                            padding: "10px 14px",
+                            background: notification.type === "success" ? "rgba(44,191,138,0.1)" : "rgba(244,132,106,0.1)",
+                            border: `1px solid ${notification.type === "success" ? "rgba(44,191,138,0.3)" : "rgba(244,132,106,0.3)"}`,
+                            borderRadius: "10px",
+                            color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                            fontSize: "0.85rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <span>{notification.text}</span>
+                            <button
+                                onClick={() => setNotification(null)}
+                                style={{
+                                    background: "transparent", border: "none",
+                                    color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                                    cursor: "pointer",
+                                    fontSize: "1.2rem", lineHeight: 1, padding: 0
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    )}
+
                     {step === 1 ? (
                         <>
                             <div style={{ marginBottom: 24 }}>
                                 <label style={labelStyle}>Registered Email</label>
                                 <input
                                     type="email" placeholder="you@example.com"
-                                    value={email} onChange={(e) => setEmail(e.target.value)}
+                                    value={email}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (notification) setNotification(null);
+                                    }}
                                     style={inputStyle}
                                 />
                             </div>
@@ -121,7 +169,11 @@ function ResetPassword() {
                                 <label style={labelStyle}>Enter 6-Digit OTP</label>
                                 <input
                                     type="text" placeholder="123456"
-                                    value={otp} onChange={(e) => setOtp(e.target.value)}
+                                    value={otp}
+                                    onChange={(e) => {
+                                        setOtp(e.target.value);
+                                        if (notification) setNotification(null);
+                                    }}
                                     style={{ ...inputStyle, letterSpacing: "2px", fontWeight: "bold" }}
                                     maxLength="6"
                                 />
@@ -131,7 +183,11 @@ function ResetPassword() {
                                 <label style={labelStyle}>New Password</label>
                                 <input
                                     type="password" placeholder="••••••••"
-                                    value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                                    value={newPassword}
+                                    onChange={(e) => {
+                                        setNewPassword(e.target.value);
+                                        if (notification) setNotification(null);
+                                    }}
                                     style={inputStyle}
                                 />
                             </div>

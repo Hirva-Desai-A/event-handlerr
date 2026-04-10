@@ -8,6 +8,10 @@ function VerifyOTP() {
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
+
+    // Custom Notification State
+    const [notification, setNotification] = useState(null); // { text: string, type: 'error' | 'success' }
+
     const inputRefs = useRef([]);
 
     const navigate = useNavigate();
@@ -17,6 +21,10 @@ function VerifyOTP() {
         const next = [...digits];
         next[idx] = clean;
         setDigits(next);
+
+        // Clear notification on input change
+        if (notification) setNotification(null);
+
         if (clean && idx < 5) inputRefs.current[idx + 1]?.focus();
     };
 
@@ -32,13 +40,18 @@ function VerifyOTP() {
         const next = ["", "", "", "", "", ""];
         text.split("").forEach((ch, i) => { next[i] = ch; });
         setDigits(next);
+
+        if (notification) setNotification(null);
+
         const focusIdx = Math.min(text.length, 5);
         inputRefs.current[focusIdx]?.focus();
     };
 
     const verify = async () => {
+        setNotification(null); // Clear previous notifications
+
         const otp = digits.join("");
-        if (otp.length < 6) return alert("Please enter all 6 digits.");
+        if (otp.length < 6) return setNotification({ text: "Please enter all 6 digits.", type: "error" });
 
         setLoading(true);
         try {
@@ -47,7 +60,7 @@ function VerifyOTP() {
             localStorage.setItem("user", JSON.stringify(res.data.user));
             navigate("/profile");
         } catch (err) {
-            alert(err.response?.data?.message || "Invalid OTP. Please try again.");
+            setNotification({ text: err.response?.data?.message || "Invalid OTP. Please try again.", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -55,13 +68,16 @@ function VerifyOTP() {
 
     // NEW: Handle Resend OTP
     const handleResendOTP = async () => {
-        if (!email) return alert("Email not found. Please try signing up again.");
+        setNotification(null); // Clear previous notifications
+
+        if (!email) return setNotification({ text: "Email not found. Please try signing up again.", type: "error" });
+
         setResending(true);
         try {
             await API.post("/auth/resend-otp", { email });
-            alert("A new OTP has been sent to your email!");
+            setNotification({ text: "A new OTP has been sent to your email!", type: "success" });
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to resend OTP.");
+            setNotification({ text: err.response?.data?.message || "Failed to resend OTP.", type: "error" });
         } finally {
             setResending(false);
         }
@@ -97,6 +113,35 @@ function VerifyOTP() {
                             Enter the OTP sent to <strong style={{ color: "#6b5ce7" }}>{email}</strong>
                         </div>
                     </div>
+
+                    {/* Custom Notification UI */}
+                    {notification && (
+                        <div style={{
+                            marginBottom: 22,
+                            padding: "10px 14px",
+                            background: notification.type === "success" ? "rgba(44,191,138,0.1)" : "rgba(244,132,106,0.1)",
+                            border: `1px solid ${notification.type === "success" ? "rgba(44,191,138,0.3)" : "rgba(244,132,106,0.3)"}`,
+                            borderRadius: "10px",
+                            color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                            fontSize: "0.85rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <span>{notification.text}</span>
+                            <button
+                                onClick={() => setNotification(null)}
+                                style={{
+                                    background: "transparent", border: "none",
+                                    color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                                    cursor: "pointer",
+                                    fontSize: "1.2rem", lineHeight: 1, padding: 0
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    )}
 
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 26 }} onPaste={handlePaste}>
                         {digits.map((d, i) => (

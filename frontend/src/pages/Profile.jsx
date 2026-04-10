@@ -18,12 +18,20 @@ function UserDetailsPanel({ onClose, user, setUser }) {
     const [saved, setSaved] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Custom Notification State
+    const [notification, setNotification] = useState(null); // { text: string, type: 'error' | 'success' }
+
     const emailChanged = email !== user?.email;
 
     // Handles sending the OTP to the new email
     const handleSendOtp = async (e) => {
         e.preventDefault();
-        if (!email || !email.includes('@')) return alert("Enter a valid email");
+        setNotification(null); // Clear previous notifications
+
+        if (!email || !email.includes('@')) {
+            return setNotification({ text: "Enter a valid email", type: "error" });
+        }
+
         setSendingOtp(true);
         try {
             // FIX: Grab the token to fix the 401 Unauthorized error
@@ -35,26 +43,32 @@ function UserDetailsPanel({ onClose, user, setUser }) {
             );
 
             setOtpSent(true);
-            alert("OTP sent to " + email);
+            setNotification({ text: `OTP sent to ${email}`, type: "success" });
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to send OTP");
+            setNotification({ text: err.response?.data?.message || "Failed to send OTP", type: "error" });
         } finally {
             setSendingOtp(false);
         }
     };
 
     const handleSave = async () => {
+        setNotification(null); // Clear previous notifications
+
         if (password || confirm) {
-            if (password !== confirm) return alert("Passwords do not match!");
-            if (password.length < 6) return alert("Password must be at least 6 characters long.");
+            if (password !== confirm) {
+                return setNotification({ text: "Passwords do not match!", type: "error" });
+            }
+            if (password.length < 6) {
+                return setNotification({ text: "Password must be at least 6 characters long.", type: "error" });
+            }
         }
 
         // Verification Checks for Email Change
         if (emailChanged && !otpSent) {
-            return alert("Please click 'Send OTP' to verify your new email first.");
+            return setNotification({ text: "Please click 'Send OTP' to verify your new email first.", type: "error" });
         }
         if (emailChanged && !otp) {
-            return alert("Please enter the OTP sent to your new email.");
+            return setNotification({ text: "Please enter the OTP sent to your new email.", type: "error" });
         }
 
         setLoading(true);
@@ -83,7 +97,7 @@ function UserDetailsPanel({ onClose, user, setUser }) {
             setOtpSent(false);
 
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to update profile");
+            setNotification({ text: err.response?.data?.message || "Failed to update profile", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -102,6 +116,36 @@ function UserDetailsPanel({ onClose, user, setUser }) {
 
     return (
         <div style={{ paddingBottom: 32 }}>
+
+            {/* Custom Notification UI */}
+            {notification && (
+                <div style={{
+                    marginBottom: 16,
+                    padding: "10px 14px",
+                    background: notification.type === "success" ? "rgba(44,191,138,0.1)" : "rgba(244,132,106,0.1)",
+                    border: `1px solid ${notification.type === "success" ? "rgba(44,191,138,0.3)" : "rgba(244,132,106,0.3)"}`,
+                    borderRadius: "10px",
+                    color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                    fontSize: "0.85rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                }}>
+                    <span>{notification.text}</span>
+                    <button
+                        onClick={() => setNotification(null)}
+                        style={{
+                            background: "transparent", border: "none",
+                            color: notification.type === "success" ? "#1a7a52" : "#d63031",
+                            cursor: "pointer",
+                            fontSize: "1.2rem", lineHeight: 1, padding: 0
+                        }}
+                    >
+                        &times;
+                    </button>
+                </div>
+            )}
+
             <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>User Name</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)} style={inp} placeholder="Your full name" />
@@ -117,6 +161,7 @@ function UserDetailsPanel({ onClose, user, setUser }) {
                             setEmail(e.target.value);
                             setOtpSent(false);
                             setOtp("");
+                            setNotification(null); // Clear notification on email change
                         }}
                         style={inp}
                         placeholder="your@email.com"
@@ -175,6 +220,7 @@ function UserDetailsPanel({ onClose, user, setUser }) {
         </div>
     );
 }
+
 function RegisteredEventsPanel() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);

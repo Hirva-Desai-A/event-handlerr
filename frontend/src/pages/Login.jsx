@@ -6,11 +6,13 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null); // Added state for the notification
 
     const navigate = useNavigate();
 
     const login = async () => {
         setLoading(true);
+        setError(null); // Clear previous errors on new attempt
         try {
             const res = await API.post("/auth/login", { email, password });
 
@@ -20,7 +22,8 @@ function Login() {
 
             navigate("/profile");
         } catch {
-            alert("Login failed. Please check your credentials.");
+            // Set the custom error message instead of triggering an alert
+            setError("Login failed. Please check your credentials.");
         } finally {
             setLoading(false);
         }
@@ -79,6 +82,34 @@ function Login() {
                             Enter your details to proceed
                         </div>
                     </div>
+
+                    {/* Custom Notification UI matching the overall aesthetic */}
+                    {error && (
+                        <div style={{
+                            marginBottom: 16,
+                            padding: "10px 14px",
+                            background: "rgba(244,132,106,0.1)",
+                            border: "1px solid rgba(244,132,106,0.3)",
+                            borderRadius: "10px",
+                            color: "#d63031",
+                            fontSize: "0.85rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <span>{error}</span>
+                            <button
+                                onClick={() => setError(null)}
+                                style={{
+                                    background: "transparent", border: "none",
+                                    color: "#d63031", cursor: "pointer",
+                                    fontSize: "1.2rem", lineHeight: 1, padding: 0
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    )}
 
                     <div style={{ marginBottom: 16 }}>
                         <label style={labelStyle}>Email ID</label>
